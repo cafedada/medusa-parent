@@ -5,12 +5,15 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Objects;
 
+import javax.sql.DataSource;
+
 import org.apache.ibatis.builder.xml.XMLMapperBuilder;
 import org.apache.ibatis.mapping.Environment;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
+import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 
 import com.google.common.reflect.Reflection;
@@ -25,29 +28,47 @@ import io.vilya.server.medusa.jdbc.demo.LogMapper;
  */
 public class MyBatisModule extends AbstractModule {
 
+	private DataSource dataSource;
+	
+	private TransactionFactory transactionFactory;
+	
 	@Override
 	protected void configure() {
-		HikariConfig config = new HikariConfig();
-		config.setJdbcUrl("jdbc:mysql://localhost/core?characterEncoding=utf8&serverTimezone=GMT%2B8");
-		config.setUsername("dev");
-		config.setPassword("123456");
+		HikariDataSource dataSource = getDataSource();
+		Configuration configuration = createMyBatisConfiguration(dataSource);
+		scanXmlMappers(configuration);
 
-		HikariDataSource dataSource = new HikariDataSource(config);
+		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
+
+		for (Class<?> mapperInterface : configuration.getMapperRegistry().getMappers()) {
+			bind((Class<Object>) mapperInterface).toInstance(Reflection.newProxy(mapperInterface,
+					new MapperInterceptor(sqlSessionFactory, mapperInterface)));
+		}
+		
+	}
+
+	private Configuration createMyBatisConfiguration(DataSource dataSource) {
 		Environment environment = new Environment("dev", new JdbcTransactionFactory(), dataSource);
 		Configuration configuration = new Configuration(environment);
 		configuration.setMapUnderscoreToCamelCase(true);
+		return configuration;
+	}
 
+	private void scanXmlMappers(Configuration configuration) {
 		String resource = "mybatis/mappers/LogMapper.xml";
 		InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);
 
 		XMLMapperBuilder xmlMapperBuilder = new XMLMapperBuilder(inputStream, configuration, resource,
 				configuration.getSqlFragments());
 		xmlMapperBuilder.parse();
+	}
 
-		SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(configuration);
-
-		bind(LogMapper.class).toInstance(Reflection.newProxy(LogMapper.class,
-				new MapperInterceptor<LogMapper>(sqlSessionFactory, LogMapper.class)));
+	private HikariDataSource getDataSource() {
+		HikariConfig config = new HikariConfig();
+		config.setJdbcUrl("jdbc:mysql://localhost/core?characterEncoding=utf8&serverTimezone=GMT%2B8");
+		config.setUsername("dev");
+		config.setPassword("123456");
+		return new HikariDataSource(config);
 	}
 
 	private static class MapperInterceptor<T> implements InvocationHandler {
@@ -63,15 +84,16 @@ public class MyBatisModule extends AbstractModule {
 
 		@Override
 		public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-			SqlSession sqlSession = sqlSessionFactory.openSession();
-			T instance = sqlSession.getMapper(mapperInterface);
-			try {
-				Object result = method.invoke(instance, args);
-				sqlSession.commit();
-				return result;
-			} catch (Exception e) {
-				sqlSession.rollback();
-				throw e;
+			try (SqlSession sqlSession = sqlSessionFactory.openSession()) {
+				T instance = sqlSession.getMapper(mapperInterface);
+				try {
+					Object result = method.invoke(instance, args);
+					sqlSession.commit();
+					return result;
+				} catch (Exception e) {
+					sqlSession.rollback();
+					throw e;
+				}
 			}
 		}
 	}
