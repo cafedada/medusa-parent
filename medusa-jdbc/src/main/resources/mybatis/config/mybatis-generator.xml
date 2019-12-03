@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+  PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+  "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+    <classPathEntry location="D:\maven\repo\mysql\mysql-connector-java\8.0.18\mysql-connector-java-8.0.18.jar" />
+
+
+
+    <context id="default" targetRuntime="MyBatis3">
+
+        <commentGenerator>
+            <!-- 是否去除自动生成的注释 true：是 ： false:否 -->
+            <property name="suppressAllComments" value="true" />
+        </commentGenerator>
+
+        <jdbcConnection driverClass="com.mysql.cj.jdbc.Driver"
+            connectionURL="jdbc:mysql://localhost/core?characterEncoding=utf8&amp;serverTimezone=GMT%2B8" userId="dev"
+            password="123456">
+        </jdbcConnection>
+
+        <javaTypeResolver>
+            <property name="forceBigDecimals" value="false" />
+            <property name="useJSR310Types" value="true" />
+        </javaTypeResolver>
+
+        <javaModelGenerator targetPackage="test.model" targetProject="medusa-jdbc">
+            <property name="enableSubPackages" value="true" />
+            <property name="trimStrings" value="true" />
+        </javaModelGenerator>
+
+        <sqlMapGenerator targetPackage="test.xml" targetProject="medusa-jdbc">
+            <property name="enableSubPackages" value="true" />
+        </sqlMapGenerator>
+
+        <javaClientGenerator type="XMLMAPPER" targetPackage="test.dao" targetProject="medusa-jdbc">
+            <property name="enableSubPackages" value="true" />
+        </javaClientGenerator>
+
+        <table schema="core" tableName="log" domainObjectName="Log" enableCountByExample="false"
+            enableDeleteByExample="false" enableSelectByExample="false" enableUpdateByExample="false">
+        </table>
+
+    </context>
+</generatorConfiguration>
