@@ -12,7 +12,7 @@
         <junit.version>5.5.2</junit.version>
         <guice.version>4.2.2</guice.version>
         <guava.version>28.1-jre</guava.version>
-        <mybatis.version>3.5.3</mybatis.version>
+        <mybatis.version>3.5.6</mybatis.version>
         <hikari-cp.version>3.4.1</hikari-cp.version>
         <mysql-connector-java.version>8.0.18</mysql-connector-java.version>
         <logback.version>1.2.3</logback.version>
