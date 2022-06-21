@@ -14,7 +14,7 @@
         <guava.version>28.1-jre</guava.version>
         <mybatis.version>3.5.3</mybatis.version>
         <hikari-cp.version>3.4.1</hikari-cp.version>
-        <mysql-connector-java.version>8.0.18</mysql-connector-java.version>
+        <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
         <logback.version>1.2.3</logback.version>
         <slf4j.version>1.7.29</slf4j.version>
     </properties>
